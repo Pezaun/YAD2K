@@ -65,8 +65,8 @@ def _main(args):
         anchors = YOLO_ANCHORS
 
     voc = h5py.File(voc_path, 'r')
-    image = PIL.Image.open(io.BytesIO(voc['train/images'][28]))
-    orig_size = np.array([image.width, image.height])
+    image = PIL.Image.open("/home/gabriel/tmp/x_images_train/2007_001630.jpg")
+    orig_size = np.array([image.size[0], image.size[1]])
     orig_size = np.expand_dims(orig_size, axis=0)
 
     # Image preprocessing.
@@ -76,7 +76,13 @@ def _main(args):
 
     # Box preprocessing.
     # Original boxes stored as 1D list of class, x_min, y_min, x_max, y_max.
-    boxes = voc['train/boxes'][28]
+    # with open("/home/gabriel/tmp/x_images_train/1552_1541_1503_1307_1209_0902_1312_1513_0835_0646_0593_1245_0462_0819_1859_1782_.jpg.json","r") as f:
+    #     boxes = f.read().splitlines().split(" ")
+
+    # # boxes = voc['train/boxes'][28]
+    # boxes = np.asarray(boxes)
+    boxes = np.loadtxt("/home/gabriel/tmp/x_images_train/2007_001630.xml")
+    print boxes
     boxes = boxes.reshape((-1, 5))
     # Get extents as y_min, x_min, y_max, x_max, class for comparision with
     # model output.
