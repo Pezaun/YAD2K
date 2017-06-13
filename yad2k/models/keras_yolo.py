@@ -59,6 +59,7 @@ def yolo_body(inputs, num_anchors, num_classes):
 
     x = concatenate([conv21_reshaped, conv20])
     x = DarknetConv2D_BN_Leaky(1024, (3, 3))(x)
+    print "------------->", num_classes
     x = DarknetConv2D(num_anchors * (num_classes + 5), (1, 1))(x)
     return Model(inputs, x)
 
