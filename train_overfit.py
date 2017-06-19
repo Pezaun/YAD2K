@@ -20,15 +20,15 @@ from keras.models import Model
 from yad2k.models.keras_yolo import (preprocess_true_boxes, yolo_body,
                                      yolo_eval, yolo_head, yolo_loss)
 from yad2k.utils.draw_boxes import draw_boxes
-import sys
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config)
+
 
 YOLO_ANCHORS = np.array(
     ((0.57273, 0.677385), (1.87446, 2.06253), (3.33843, 5.47434),
      (7.88282, 3.52778), (9.77052, 9.16828)))
-
-# YOLO_ANCHORS = np.array(
-#     ((1.3221, 1.73145), (3.19275, 4.00944), (5.05587, 8.09892),
-#      (9.47112, 4.84053), (11.2364, 10.0071)))
 
 argparser = argparse.ArgumentParser(
     description='Train YOLO_v2 model to overfit on a single image.')
@@ -70,28 +70,22 @@ def _main(args):
         anchors = YOLO_ANCHORS
 
     # voc = h5py.File(voc_path, 'r')
-    # image = PIL.Image.open("/home/gabriel/tmp/x_images_train/2007_001630.jpg")
+    # image = PIL.Image.open(io.BytesIO(voc['train/images'][28]))    
+
+    # Image preprocessing.
+    # image = image.resize((416, 416), PIL.Image.BICUBIC)
     image = PIL.Image.open("/home/gabriel/tmp/x_images_train/1552_1541_1503_1307_1209_0902_1312_1513_0835_0646_0593_1245_0462_0819_1859_1782_.jpg")
     orig_size = np.array([image.size[0], image.size[1]])
     orig_size = np.expand_dims(orig_size, axis=0)
-
-    # Image preprocessing.
     image = image.resize((416, 416), PIL.Image.BICUBIC)
     image_data = np.array(image, dtype=np.float)
     image_data /= 255.
 
     # Box preprocessing.
     # Original boxes stored as 1D list of class, x_min, y_min, x_max, y_max.
-    # with open("/home/gabriel/tmp/x_images_train/1552_1541_1503_1307_1209_0902_1312_1513_0835_0646_0593_1245_0462_0819_1859_1782_.jpg.json","r") as f:
-    #     boxes = f.read().splitlines().split(" ")
-
-    # # boxes = voc['train/boxes'][28]
-    # boxes = np.asarray(boxes)
-    # boxes = np.loadtxt("/home/gabriel/tmp/x_images_train/2007_001630.xml")
+    # boxes = voc['train/boxes'][28]
     boxes = np.loadtxt("/home/gabriel/tmp/x_images_train/1552_1541_1503_1307_1209_0902_1312_1513_0835_0646_0593_1245_0462_0819_1859_1782_.xml")
-    print boxes
     boxes = boxes.reshape((-1, 5))
-
     # Get extents as y_min, x_min, y_max, x_max, class for comparision with
     # model output.
     boxes_extents = boxes[:, [2, 1, 4, 3, 0]]
@@ -102,8 +96,6 @@ def _main(args):
     boxes_xy = boxes_xy / orig_size
     boxes_wh = boxes_wh / orig_size
     boxes = np.concatenate((boxes_xy, boxes_wh, boxes[:, 0:1]), axis=1)
-
-    print boxes
 
     # Precompute detectors_mask and matching_true_boxes for training.
     # Detectors mask is 1 for each spatial position in the final conv layer and
@@ -153,22 +145,9 @@ def _main(args):
             'yolo_loss': lambda y_true, y_pred: y_pred
         })  # This is a hack to use the custom loss function in the last layer.
 
-    model.summary()
-    # sys.exit()
-
     # Add batch dimension for training.
     image_data = np.expand_dims(image_data, axis=0)
     boxes = np.expand_dims(boxes, axis=0)
-
-
-    print "Image Data:", image_data.shape
-    print "Boxes Data:", boxes.shape
-
-    print boxes
-    print boxes.dtype
-
-    sys.exit()
-
     detectors_mask = np.expand_dims(detectors_mask, axis=0)
     matching_true_boxes = np.expand_dims(matching_true_boxes, axis=0)
 
@@ -206,8 +185,7 @@ def _main(args):
     image_with_boxes = draw_boxes(image_data[0], out_boxes, out_classes,
                                   class_names, out_scores)
     plt.imshow(image_with_boxes, interpolation='nearest')
-    plt.savefig("overfit_fig.jpg")
-    plt.show()    
+    plt.show()
 
 
 if __name__ == '__main__':

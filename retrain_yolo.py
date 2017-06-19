@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This is a script that can be used to retrain the YOLOv2 model for your own dataset.
 """
@@ -105,7 +106,8 @@ def get_anchors(anchors_path):
 def process_data(images, boxes=None):
     '''processes the data'''
     images = [PIL.Image.fromarray(i) for i in images]
-    orig_size = np.array([images[0].width, images[0].height])
+    print images[0]
+    orig_size = np.array([images[0].size[0], images[0].size[0]])
     orig_size = np.expand_dims(orig_size, axis=0)
 
     # Image preprocessing.
